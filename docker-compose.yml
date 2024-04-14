@@ -1,0 +1,60 @@
+version: "3"
+
+# 网络配置
+networks:
+  docker_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+# 服务容器配置
+services:
+  # https://hub.docker.com/_/mongo
+  mongo-yapi:
+    image: mongo 
+    container_name: mongo-yapi
+    restart: always
+    # ports:
+    #   - 27017:27017
+    environment:
+      - TZ=Asia/Shanghai
+      - MONGO_INITDB_DATABASE=yapi
+      # - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      # - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    volumes:
+      # - ./data/db:/data/db
+      - mongo-data:/data/db
+    networks:
+      docker_net:
+        ipv4_address: 172.22.0.11
+
+  web-yapi:
+    image: jayfong/yapi:latest
+    container_name: web-ypai
+    restart: always
+    ports:
+      - 80:3000
+    depends_on:
+      - mongo-yapi
+    links:
+      - mongo-yapi
+    environment:
+      - TZ=Asia/Shanghai
+      - YAPI_ADMIN_ACCOUNT=${YAPI_ADMIN_ACCOUNT}
+      - YAPI_ADMIN_PASSWORD=${YAPI_ADMIN_PASSWORD}
+      - YAPI_CLOSE_REGISTER=true
+      - YAPI_DB_SERVERNAME=mongo-yapi
+      - YAPI_DB_PORT=27017
+      - YAPI_DB_DATABASE=yapi
+      # - YAPI_DB_USER=root
+      # - YAPI_DB_PASS=${PASSWORD}
+      - YAPI_MAIL_ENABLE=false
+      - YAPI_LDAP_LOGIN_ENABLE=false
+      - YAPI_PLUGINS=[]
+    networks:
+      docker_net:
+        ipv4_address: 172.22.0.12
+
+volumes:
+  mongo-data:
+
