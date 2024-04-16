@@ -11,26 +11,31 @@ networks:
 services:
   # https://hub.docker.com/_/mongo
   mongo-yapi:
-    image: mongo 
+    # image: mongo:latest
+    image: mongo:4.4
     container_name: mongo-yapi
     restart: always
+    privileged: true
     # ports:
-    #   - 27017:27017
+      # - 27017:27017
     environment:
       - TZ=Asia/Shanghai
       - MONGO_INITDB_DATABASE=yapi
       # - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
       # - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     volumes:
-      # - ./data/db:/data/db
-      - mongo-data:/data/db
+      # - ./dbdata:/data/db
+      - mongodata:/data/db
+    # 增加启动参数，--auth，表示连接 mongodb 需要用户名和密码
+    # command:
+    #   - "--auth"
     networks:
       docker_net:
         ipv4_address: 172.22.0.11
 
   web-yapi:
     image: jayfong/yapi:latest
-    container_name: web-ypai
+    container_name: web-yapi
     restart: always
     ports:
       - 80:3000
@@ -40,21 +45,30 @@ services:
       - mongo-yapi
     environment:
       - TZ=Asia/Shanghai
+      # 随便设置一个账号（账号是邮箱的格式）
       - YAPI_ADMIN_ACCOUNT=${YAPI_ADMIN_ACCOUNT}
+      # 设置账号的密码
       - YAPI_ADMIN_PASSWORD=${YAPI_ADMIN_PASSWORD}
+      # 禁用注册功能
       - YAPI_CLOSE_REGISTER=true
+      # 设置连接 mongdb 的服务器地址，可以使用容器内部的 mongodb 服务名称
       - YAPI_DB_SERVERNAME=mongo-yapi
       - YAPI_DB_PORT=27017
-      - YAPI_DB_DATABASE=yapi
-      # - YAPI_DB_USER=root
-      # - YAPI_DB_PASS=${PASSWORD}
+      - YAPI_DB_DATABASE=${YAPI_DB_DATABASE}
+      # - YAPI_DB_USER=${MONGO_INITDB_ROOT_USERNAME}
+      # - YAPI_DB_PASS=${MONGO_INITDB_ROOT_PASSWORD}
+      # - YAPI_DB_AUTH_SOURCE=${YAPI_DB_AUTH_SOURCE}
+      # - YAPI_DB_CONNECT_STRING="mongodb://jobs:123456@mongo-yapi:27017/yapi?authSource=admin"
+      # 禁用发送邮件的功能
       - YAPI_MAIL_ENABLE=false
+      # 禁用 LDAP 登录功能
       - YAPI_LDAP_LOGIN_ENABLE=false
+      # 不使用任何插件
       - YAPI_PLUGINS=[]
     networks:
       docker_net:
         ipv4_address: 172.22.0.12
 
 volumes:
-  mongo-data:
+  mongodata:
 
